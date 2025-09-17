@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光明数智员工</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1D4ED8', // 深蓝色 - 更专业、稳重
+                        secondary: '#0284C7', // 明亮的蓝色
+                        accent: '#DC2626', // 红色 - 用于党建相关内容
+                        dark: '#0F172A',
+                        light: '#F8FAFC',
+                        neutral: '#64748B'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .tool-card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+            .category-item {
+                @apply px-4 py-3 rounded-lg cursor-pointer transition-all duration-300 hover:bg-primary/5;
+            }
+            .category-item-active {
+                @apply bg-primary/15 text-primary font-medium border-l-4 border-primary shadow-sm;
+            }
+            .subcategory-item {
+                @apply px-3 py-2 rounded-md text-sm cursor-pointer transition-all duration-200;
+            }
+            .subcategory-item-active {
+                @apply bg-primary text-white;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-dark h-screen flex overflow-hidden">
+    <!-- 左侧栏 - 大类导航 -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex-shrink-0 hidden md:block overflow-y-auto">
+        <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-primary/5 to-secondary/5 transition-all duration-300">
+            <h1 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary via-blue-600 to-secondary bg-clip-text text-transparent tracking-tight drop-shadow-sm transition-all duration-300">
+                光明数智员工
+            </h1>
+        </div>
+        
+        <div class="p-4">
+            <div class="space-y-1" id="main-category-list">
+                <!-- 主分类将通过JavaScript动态生成 -->
+            </div>
+            
+            <!-- 添加按钮移至分类列表下方 -->
+            <div class="mt-4">
+                <button class="text-primary text-sm hover:underline w-full py-2 rounded-md hover:bg-primary/5 transition-colors duration-200">
+                    <i class="fa fa-plus-circle mr-1"></i>添加
+                </button>
+            </div>
+            
+            <script>
+                // 辅助函数：获取主标题(光明XX)
+                function getTitleName(fullName) {
+                    // 查找分隔符"——"
+                    const separatorIndex = fullName.indexOf('——');
+                    if (separatorIndex > -1) {
+                        const subtitle = fullName.substring(separatorIndex + 2).trim();
+                        return subtitle;
+                    }
+                    return fullName;
+                }
+
+                // 辅助函数：获取解释文本(XX数字员工)
+                function getDescriptionName(fullName) {
+                    // 查找分隔符"——"
+                    const separatorIndex = fullName.indexOf('——');
+                    if (separatorIndex > -1) {
+                        const mainName = fullName.substring(0, separatorIndex).trim();
+                        return mainName;
+                    }
+                    return '';
+                }
+                
+                // 动态生成主分类列表
+                function generateMainCategoryList() {
+                    const mainCategoryList = document.getElementById('main-category-list');
+                    mainCategoryList.innerHTML = '';
+                    
+                    // 定义分类图标映射
+                    const categoryIcons = {
+                        calculation: 'wrench',
+                        party: 'flag',
+                        hr: 'users',
+                        audit: 'search',
+                        marketing: 'bar-chart',
+                        construction: 'wrench',
+                        communication: 'wifi',
+                        dispatch: 'cogs'
+                    };
+                    
+                    // 生成主分类项
+                    let isFirstCategory = true;
+                    Object.keys(toolData).forEach(categoryKey => {
+                        const category = toolData[categoryKey];
+                        const categoryItem = document.createElement('div');
+                        const iconClass = categoryIcons[categoryKey] || 'wrench';
+                        categoryItem.className = `category-item ${isFirstCategory ? 'category-item-active' : 'hover:bg-gray-100'}`;
+                        categoryItem.setAttribute('data-category', categoryKey);
+                        
+                        // 获取主标题和解释文本
+                        const titleName = getTitleName(category.name);
+                        const descriptionName = getDescriptionName(category.name);
+                        
+                        // 设置统一的标题颜色为黑色
+                        let titleColorClass = 'text-black';
+                        let iconColorClass = 'text-gray-600'; // 所有分类图标使用默认灰色
+                        
+                        // 生成调整后的HTML结构，突出主标题，弱化解释文字
+                        if (descriptionName) {
+                            categoryItem.innerHTML = `
+                                <div class="flex items-center">
+                                    <i class="fa fa-${iconClass} mr-3 ${iconColorClass}"></i>
+                                    <div class="flex flex-col">
+                                        <span class="font-medium ${titleColorClass}">${titleName}</span>
+                                        <span class="text-xs text-neutral">${descriptionName}</span>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            categoryItem.innerHTML = `
+                                <div class="flex items-center">
+                                    <i class="fa fa-${iconClass} mr-3 ${iconColorClass}"></i>
+                                    <span class="font-medium ${titleColorClass}">${titleName}</span>
+                                </div>
+                            `;
+                        }
+                        
+                        // 添加大类点击事件
+                        categoryItem.addEventListener('click', () => {
+                            const category = categoryItem.getAttribute('data-category');
+                            
+                            // 更新大类激活状态
+                            document.querySelectorAll('#main-category-list .category-item').forEach(i => {
+                                i.classList.remove('category-item-active');
+                                i.classList.add('hover:bg-gray-100');
+                            });
+                            categoryItem.classList.add('category-item-active');
+                            categoryItem.classList.remove('hover:bg-gray-100');
+                            
+                            // 更新当前大类名称
+                            document.getElementById('current-main-category').textContent = toolData[category].name;
+                            
+                            // 生成并更新小类列表
+                            generateSubcategoryList(category);
+                            
+                            // 获取第一个小类并显示其工具
+                            const firstSubcategory = Object.keys(toolData[category].subcategories)[0];
+                            if (firstSubcategory) {
+                                showSubcategoryTools(category, firstSubcategory);
+                            } else {
+                                // 如果没有小类，清空工具列表
+                                document.getElementById('tools-grid').innerHTML = `
+                                    <div class="col-span-full text-center py-12">
+                                        <i class="fa fa-folder-open-o text-4xl text-gray-300 mb-4"></i>
+                                        <p class="text-gray-500">该分类下暂无小类和工具</p>
+                                    </div>
+                                `;
+                                document.getElementById('current-subcategory').textContent = "暂无工具";
+                            }
+                        });
+                        
+                        mainCategoryList.appendChild(categoryItem);
+                        isFirstCategory = false;
+                    });
+                }
+                
+                // 移动generateSubcategoryList函数的定义到这里，确保在调用前定义
+                // 生成小类列表
+                function generateSubcategoryList(category) {
+                    const subcategoryList = document.getElementById('subcategory-list');
+                    subcategoryList.innerHTML = '';
+                    
+                    const subcategories = toolData[category].subcategories;
+                    
+                    // 如果没有小类，显示提示
+                    if (Object.keys(subcategories).length === 0) {
+                        subcategoryList.innerHTML = `
+                            <div class="subcategory-item">
+                                <p class="text-gray-400 text-sm">暂无小类</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                }
+
+                // 修改页面初始化逻辑，先生成主分类列表
+                window.addEventListener('DOMContentLoaded', () => {
+                    // 动态生成主分类列表
+                    generateMainCategoryList();
+                    
+                    // 默认显示第一个大类的第一个小类
+                    const firstCategory = Object.keys(toolData)[0];
+                    generateSubcategoryList(firstCategory);
+                    
+                    const firstSubcategory = Object.keys(toolData[firstCategory].subcategories)[0];
+                    if (firstSubcategory) {
+                        showSubcategoryTools(firstCategory, firstSubcategory);
+                    }
+                });
+            </script>
+        </div>
+        
+        <div class="absolute bottom-0 left-0 w-64 p-4 border-t border-gray-200 bg-white">
+            <div class="flex items-center">
+                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-10 h-10 rounded-full mr-3">
+                <div>
+                    <p class="font-medium text-sm">张三</p>
+                    <p class="text-gray-500 text-xs">个人账户</p>
+                </div>
+                <button class="ml-auto text-gray-400 hover:text-gray-600">
+                    <i class="fa fa-cog"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+        <!-- 顶部导航栏 -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center px-6">
+            <div class="flex items-center md:hidden mr-4">
+                <button id="mobile-menu-button" class="text-gray-500 hover:text-primary">
+                    <i class="fa fa-bars text-xl"></i>
+                </button>
+            </div>
+            
+            <!-- 搜索框占满剩余空间 -->
+            <div class="relative flex-1">
+                <input type="text" placeholder="搜索工具..." 
+                    class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+            
+            <!-- 消息按钮移到右侧 -->
+            <div class="ml-4">
+                <button class="text-gray-500 hover:text-primary relative p-2">
+                    <i class="fa fa-bell text-xl"></i>
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">3</span>
+                </button>
+            </div>
+        </header>
+        
+        <!-- 工具内容区 -->
+        <div class="flex-1 overflow-y-auto bg-gray-50 flex flex-col">
+            <!-- 小类分类区域 -->
+            <div class="bg-white border-b border-gray-200 p-4">
+                <div class="flex flex-col">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-xl font-bold text-gray-800" id="current-main-category">光明数智助理</h2>
+                    </div>
+                    
+                    <!-- 小类滚动容器 -->
+                    <div class="overflow-x-auto -mx-4 px-4">
+                        <div class="flex space-x-2 min-w-max" id="subcategory-list">
+                            <!-- 光明数智助理小类 -->
+                            <div class="subcategory-item subcategory-item-active" data-subcategory="document">
+                                文稿智匠
+                            </div>
+                            <div class="subcategory-item hover:bg-gray-100" data-subcategory="schedule">
+                                日程管家
+                            </div>
+                            <div class="subcategory-item hover:bg-gray-100" data-subcategory="knowledge">
+                                智识百科
+                            </div>
+                            <div class="subcategory-item hover:bg-gray-100" data-subcategory="data">
+                                数聚工坊
+                            </div>
+                            <div class="subcategory-item hover:bg-gray-100" data-subcategory="innovation">
+                                智创工场
+                            </div>
+                            <button class="text-primary text-sm hover:underline hidden sm:block whitespace-nowrap">
+                                <i class="fa fa-plus-circle mr-1"></i>添加小类
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 工具卡片网格 -->
+            <div class="flex-1 p-6 overflow-y-auto">
+                <!-- 删除小类名称和添加工具按钮 -->
+                <div class="mb-6"></div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="tools-grid">
+                    <!-- 文稿智匠工具卡片 -->
+                    <div class="bg-white rounded-xl shadow p-5 tool-card-hover cursor-move" draggable="true" data-category="calculation" data-subcategory="document">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-primary">
+                                <i class="fa fa-check-circle text-xl"></i>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-yellow-400 hover:text-yellow-600">
+                                    <i class="fa fa-star"></i>
+                                </button>
+                                <button class="text-gray-400 hover:text-gray-600">
+                                    <i class="fa fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">文稿卫士</h3>
+                        <p class="text-gray-500 text-sm mb-4">文档错别字查错、排版优化</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs bg-blue-50 text-primary px-2 py-1 rounded-full">文稿智匠</span>
+                            <span class="text-xs text-gray-400">使用次数: 256</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow p-5 tool-card-hover cursor-move" draggable="true" data-category="calculation" data-subcategory="document">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-primary">
+                                <i class="fa fa-file-text-o text-xl"></i>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-gray-400 hover:text-gray-600">
+                                    <i class="fa fa-star-o"></i>
+                                </button>
+                                <button class="text-gray-400 hover:text-gray-600">
+                                    <i class="fa fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">公文规范官</h3>
+                        <p class="text-gray-500 text-sm mb-4">公文格式自动校对</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs bg-blue-50 text-primary px-2 py-1 rounded-full">文稿智匠</span>
+                            <span class="text-xs text-gray-400">使用次数: 187</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow p-5 tool-card-hover cursor-move" draggable="true" data-category="calculation" data-subcategory="document">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-primary">
+                                <i class="fa fa-pencil text-xl"></i>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-yellow-400 hover:text-yellow-600">
+                                    <i class="fa fa-star"></i>
+                                </button>
+                                <button class="text-gray-400 hover:text-gray-600">
+                                    <i class="fa fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">事务小秘书</h3>
+                        <p class="text-gray-500 text-sm mb-4">常用公文与事务文稿一键生成</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs bg-blue-50 text-primary px-2 py-1 rounded-full">文稿智匠</span>
+                            <span class="text-xs text-gray-400">使用次数: 215</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow p-5 tool-card-hover cursor-move" draggable="true" data-category="calculation" data-subcategory="document">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-primary">
+                                <i class="fa fa-language text-xl"></i>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-gray-400 hover:text-gray-600">
+                                    <i class="fa fa-star-o"></i>
+                                </button>
+                                <button class="text-gray-400 hover:text-gray-600">
+                                    <i class="fa fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">双语翻译官</h3>
+                        <p class="text-gray-500 text-sm mb-4">文件翻译、双语对照稿件生成</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs bg-blue-50 text-primary px-2 py-1 rounded-full">文稿智匠</span>
+                            <span class="text-xs text-gray-400">使用次数: 168</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- 排序模态框 -->
+    <div id="sort-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">排序方式</h3>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-3 mb-6">
+                <div class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input type="radio" id="sort-recent" name="sort" class="mr-3" checked>
+                    <label for="sort-recent">最近使用</label>
+                </div>
+                <div class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input type="radio" id="sort-frequent" name="sort" class="mr-3">
+                    <label for="sort-frequent">使用频率</label>
+                </div>
+                <div class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input type="radio" id="sort-custom" name="sort" class="mr-3">
+                    <label for="sort-custom">自定义排序（拖拽调整）</label>
+                </div>
+                <div class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <input type="radio" id="sort-alphabetical" name="sort" class="mr-3">
+                    <label for="sort-alphabetical">字母顺序</label>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button id="cancel-sort" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">取消</button>
+                <button id="save-sort" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 工具数据 - 实际项目中可以从API获取
+        const toolData = {
+            calculation: {
+                name: "个人办公助理——光明数智助理",
+                subcategories: {
+                    document: {
+                        name: "文稿智匠",
+                        tools: [
+                            {
+                                id: 1,
+                                name: "文稿卫士",
+                                description: "文档错别字查错、排版优化",
+                                icon: "check-circle",
+                                color: "blue",
+                                usage: 256,
+                                favorite: true,
+                                instructions: "文稿卫士使用说明：\n1. 上传需要检查的文档\n2. 系统自动检查错别字、语法错误和排版问题\n3. 查看检查报告，一键应用优化建议\n4. 保存优化后的文档"
+                            },
+                            {
+                                id: 2,
+                                name: "公文规范官",
+                                description: "公文格式自动校对",
+                                icon: "file-text-o",
+                                color: "blue",
+                                usage: 187,
+                                favorite: false,
+                                instructions: "公文规范官使用说明：\n1. 上传公文文档\n2. 选择对应的公文类型（通知、报告、请示等）\n3. 系统自动检查并标注格式问题\n4. 按照建议调整格式"
+                            },
+                            {
+                                id: 3,
+                                name: "事务小秘书",
+                                description: "常用公文与事务文稿一键生成",
+                                icon: "pencil",
+                                color: "blue",
+                                usage: 215,
+                                favorite: true,
+                                instructions: "事务小秘书使用说明：\n1. 选择文稿类型\n2. 填写关键信息（如标题、主体内容等）\n3. 系统自动生成完整文稿\n4. 可进行个性化修改"
+                            },
+                            {
+                                id: 4,
+                                name: "双语翻译官",
+                                description: "文件翻译、双语对照稿件生成",
+                                icon: "language",
+                                color: "blue",
+                                usage: 168,
+                                favorite: false,
+                                instructions: "双语翻译官使用说明：\n1. 上传需要翻译的文档或输入文本\n2. 选择源语言和目标语言\n3. 点击翻译按钮\n4. 可选择生成双语对照版本"
+                            }
+                        ]
+                    },
+                    schedule: {
+                        name: "日程管家",
+                        tools: [
+                            {
+                                id: 5,
+                                name: "计划管家",
+                                description: "工作计划录入与提醒",
+                                icon: "calendar",
+                                color: "green",
+                                usage: 320,
+                                favorite: true,
+                                instructions: "计划管家使用说明：\n1. 点击新建计划按钮\n2. 填写计划名称、内容、截止时间\n3. 设置提醒时间\n4. 完成后保存"
+                            },
+                            {
+                                id: 6,
+                                name: "通知快手",
+                                description: "各类通知公告快速生成与推送",
+                                icon: "bullhorn",
+                                color: "green",
+                                usage: 245,
+                                favorite: false,
+                                instructions: "通知快手使用说明：\n1. 选择通知模板\n2. 填写通知内容和相关信息\n3. 添加接收人\n4. 预览后发送"
+                            },
+                            {
+                                id: 7,
+                                name: "日程协调师",
+                                description: "自动匹配多人会议的最佳时间",
+                                icon: "users",
+                                color: "green",
+                                usage: 189,
+                                favorite: true,
+                                instructions: "日程协调师使用说明：\n1. 添加参与会议的人员\n2. 设置会议时长\n3. 选择会议优先级和可选时间段\n4. 系统自动推荐最佳会议时间"
+                            }
+                        ]
+                    },
+                    knowledge: {
+                        name: "智识百科",
+                        tools: [
+                            {
+                                id: 8,
+                                name: "摘要精灵",
+                                description: "公文、邮件快速提炼重点",
+                                icon: "magic",
+                                color: "purple",
+                                usage: 276,
+                                favorite: false,
+                                instructions: "摘要精灵使用说明：\n1. 上传文档或粘贴文本内容\n2. 选择摘要长度\n3. 点击生成摘要\n4. 可调整摘要内容"
+                            },
+                            {
+                                id: 9,
+                                name: "文件搜索侠",
+                                description: "智能检索存档文件，问答式获取信息",
+                                icon: "search",
+                                color: "purple",
+                                usage: 310,
+                                favorite: true,
+                                instructions: "文件搜索侠使用说明：\n1. 在搜索框输入关键词或问题\n2. 系统自动检索相关文件\n3. 查看搜索结果并获取所需信息\n4. 可保存常用搜索"
+                            },
+                            {
+                                id: 10,
+                                name: "电网答人",
+                                description: "内置电网制度、业务规范的知识问答助手",
+                                icon: "book",
+                                color: "purple",
+                                usage: 342,
+                                favorite: true,
+                                instructions: "电网答人使用说明：\n1. 在对话框输入您的问题\n2. 系统自动查询相关知识库\n3. 查看回答和相关制度原文\n4. 可追问或收藏有用信息"
+                            }
+                        ]
+                    },
+                    data: {
+                        name: "数聚工坊",
+                        tools: [
+                            {
+                                id: 11,
+                                name: "表格魔术师",
+                                description: "批量汇总、清洗、统计Excel数据",
+                                icon: "table",
+                                color: "teal",
+                                usage: 223,
+                                favorite: false,
+                                instructions: "表格魔术师使用说明：\n1. 上传Excel文件\n2. 选择要处理的数据范围\n3. 选择处理方式（汇总、清洗、统计等）\n4. 设置参数并执行操作"
+                            },
+                            {
+                                id: 12,
+                                name: "报表工匠",
+                                description: "一键生成标准化周报、月报、趋势分析报告",
+                                icon: "bar-chart",
+                                color: "teal",
+                                usage: 289,
+                                favorite: true,
+                                instructions: "报表工匠使用说明：\n1. 选择报表模板\n2. 上传或选择数据源\n3. 设置报表周期和参数\n4. 生成报表并下载"
+                            }
+                        ]
+                    },
+                    innovation: {
+                        name: "智创工场",
+                        tools: [
+                            {
+                                id: 13,
+                                name: "纪要速写手",
+                                description: "会议录音/文字自动生成会议纪要",
+                                icon: "microphone",
+                                color: "indigo",
+                                usage: 205,
+                                favorite: false,
+                                instructions: "纪要速写手使用说明：\n1. 上传会议录音或文字记录\n2. 选择语言和识别精度\n3. 点击生成纪要\n4. 编辑和完善纪要内容"
+                            },
+                            {
+                                id: 14,
+                                name: "宣讲影像师",
+                                description: "导入PPT/Word，一键生成解说视频",
+                                icon: "video-camera",
+                                color: "indigo",
+                                usage: 178,
+                                favorite: true,
+                                instructions: "宣讲影像师使用说明：\n1. 上传PPT或Word文档\n2. 选择配音风格和语速\n3. 点击生成视频\n4. 预览并下载生成的视频"
+                            },
+                            {
+                                id: 15,
+                                name: "学习教练",
+                                description: "自动整理学习要点，生成测验题库",
+                                icon: "graduation-cap",
+                                color: "indigo",
+                                usage: 196,
+                                favorite: false,
+                                instructions: "学习教练使用说明：\n1. 上传学习资料\n2. 选择整理方式和测验题型\n3. 点击生成学习要点和题库\n4. 查看和使用生成的内容"
+                            }
+                        ]
+                    }
+                }
+            },
+            party: {
+                name: "党建数字员工 —— 光明红心智辅",
+                subcategories: {
+                    party_construction: {
+                        name: "党建工作",
+                        tools: [
+                            {
+                                id: 21,
+                                name: "党建文稿师",
+                                description: "党务材料、党课稿件自动生成与规范化排版",
+                                icon: "file-text-o",
+                                color: "red",
+                                usage: 198,
+                                favorite: true,
+                                instructions: "党建文稿师使用说明：\n1. 选择文稿类型（党课、汇报、总结等）\n2. 填写关键信息和要点\n3. 系统自动生成文稿草稿\n4. 进行排版和内容调整"
+                            },
+                            {
+                                id: 22,
+                                name: "党建宣传官",
+                                description: "党建简报、宣传海报、主题活动推送一键生成",
+                                icon: "bullhorn",
+                                color: "red",
+                                usage: 212,
+                                favorite: false,
+                                instructions: "党建宣传官使用说明：\n1. 选择宣传类型（海报、简报、推送等）\n2. 上传相关图片和文字素材\n3. 选择模板和风格\n4. 生成并导出宣传材料"
+                            }
+                        ]
+                    },
+                    meeting_learning: {
+                        name: "三会一课",
+                        tools: [
+                            {
+                                id: 23,
+                                name: "三会一课助手",
+                                description: "会议纪要、学习计划、参会情况自动整理",
+                                icon: "users",
+                                color: "red",
+                                usage: 235,
+                                favorite: true,
+                                instructions: "三会一课助手使用说明：\n1. 记录会议内容或上传会议录音\n2. 设置会议类型和相关信息\n3. 系统自动生成会议纪要\n4. 整理参会情况和学习计划"
+                            },
+                            {
+                                id: 24,
+                                name: "学习督导员",
+                                description: "党员学习进度跟踪、学习测验生成与提醒",
+                                icon: "graduation-cap",
+                                color: "red",
+                                usage: 187,
+                                favorite: false,
+                                instructions: "学习督导员使用说明：\n1. 导入党员学习资料\n2. 设置学习计划和时间节点\n3. 系统自动生成测验题库\n4. 跟踪学习进度并发送提醒"
+                            }
+                        ]
+                    }
+                }
+            },
+            hr: {
+                name: "人资数字员工 —— 光明才智管家",
+                subcategories: {
+                    recruitment: {
+                        name: "招聘管理",
+                        tools: [
+                            {
+                                id: 31,
+                                name: "招聘智投手",
+                                description: "简历筛选、岗位需求自动匹配",
+                                icon: "user-plus",
+                                color: "blue",
+                                usage: 267,
+                                favorite: true,
+                                instructions: "招聘智投手使用说明：\n1. 上传岗位需求说明\n2. 导入应聘者简历\n3. 系统自动匹配和筛选简历\n4. 查看匹配度报告和推荐结果"
+                            }
+                        ]
+                    },
+                    attendance: {
+                        name: "考勤绩效",
+                        tools: [
+                            {
+                                id: 32,
+                                name: "考勤统计官",
+                                description: "考勤、请休假自动汇总，异常情况预警",
+                                icon: "calendar-check-o",
+                                color: "blue",
+                                usage: 312,
+                                favorite: true,
+                                instructions: "考勤统计官使用说明：\n1. 导入考勤原始数据\n2. 设置考勤规则和统计周期\n3. 系统自动汇总考勤数据\n4. 识别异常情况并发出预警"
+                            },
+                            {
+                                id: 33,
+                                name: "绩效评审师",
+                                description: "绩效数据分析、评价意见智能生成",
+                                icon: "bar-chart",
+                                color: "blue",
+                                usage: 289,
+                                favorite: false,
+                                instructions: "绩效评审师使用说明：\n1. 导入绩效考核数据\n2. 选择分析维度和指标\n3. 系统自动进行数据分析\n4. 生成评价意见和改进建议"
+                            }
+                        ]
+                    },
+                    training: {
+                        name: "培训发展",
+                        tools: [
+                            {
+                                id: 34,
+                                name: "培训规划师",
+                                description: "培训资料整理、学习计划与考试题库自动生成",
+                                icon: "book",
+                                color: "blue",
+                                usage: 205,
+                                favorite: true,
+                                instructions: "培训规划师使用说明：\n1. 上传培训相关资料\n2. 设置培训目标和学员信息\n3. 系统自动生成学习计划\n4. 生成配套考试题库"
+                            }
+                        ]
+                    }
+                }
+            },
+            audit: {
+                name: "审计数字员工 —— 光明慧鉴审监",
+                subcategories: {
+                    planning: {
+                        name: "审计计划",
+                        tools: [
+                            {
+                                id: 41,
+                                name: "审计计划师",
+                                description: "自动生成审计方案与时间安排",
+                                icon: "calendar",
+                                color: "green",
+                                usage: 189,
+                                favorite: true,
+                                instructions: "审计计划师使用说明：\n1. 输入审计目标和范围\n2. 设置审计时间和资源限制\n3. 系统自动生成审计方案草稿\n4. 调整方案细节和时间安排"
+                            }
+                        ]
+                    },
+                    risk_control: {
+                        name: "风险控制",
+                        tools: [
+                            {
+                                id: 42,
+                                name: "风险扫描仪",
+                                description: "智能识别业务数据中的潜在风险点",
+                                icon: "search",
+                                color: "green",
+                                usage: 256,
+                                favorite: false,
+                                instructions: "风险扫描仪使用说明：\n1. 导入业务数据和相关资料\n2. 设置风险扫描参数和重点\n3. 系统自动识别潜在风险点\n4. 生成风险评估报告"
+                            }
+                        ]
+                    },
+                    reporting: {
+                        name: "审计报告",
+                        tools: [
+                            {
+                                id: 43,
+                                name: "证据整理官",
+                                description: "审计底稿与凭证分类归档",
+                                icon: "folder-open-o",
+                                color: "green",
+                                usage: 223,
+                                favorite: true,
+                                instructions: "证据整理官使用说明：\n1. 上传审计证据和凭证资料\n2. 选择分类标准和归档方式\n3. 系统自动进行分类整理\n4. 生成索引和目录"
+                            },
+                            {
+                                id: 44,
+                                name: "审计报告匠",
+                                description: "一键生成规范化审计报告与改进建议",
+                                icon: "file-text-o",
+                                color: "green",
+                                usage: 278,
+                                favorite: false,
+                                instructions: "审计报告匠使用说明：\n1. 导入审计发现和结果\n2. 选择报告模板和格式\n3. 系统自动生成报告草稿\n4. 添加改进建议和结论"
+                            }
+                        ]
+                    }
+                }
+            },
+            marketing: {
+                name: "营销数字员工 —— 光明慧销参谋",
+                subcategories: {
+                    customer: {
+                        name: "客户管理",
+                        tools: [
+                            {
+                                id: 51,
+                                name: "客户洞察官",
+                                description: "客户数据挖掘，客户画像与需求分析",
+                                icon: "user-circle-o",
+                                color: "orange",
+                                usage: 301,
+                                favorite: true,
+                                instructions: "客户洞察官使用说明：\n1. 导入客户数据和交易记录\n2. 设置分析维度和目标\n3. 系统自动进行数据挖掘\n4. 生成客户画像和需求分析报告"
+                            }
+                        ]
+                    },
+                    planning: {
+                        name: "营销策划",
+                        tools: [
+                            {
+                                id: 52,
+                                name: "方案创意师",
+                                description: "自动生成营销方案、宣传话术、活动策划",
+                                icon: "lightbulb-o",
+                                color: "orange",
+                                usage: 245,
+                                favorite: false,
+                                instructions: "方案创意师使用说明：\n1. 输入营销目标和产品信息\n2. 选择方案类型和风格\n3. 系统自动生成创意方案草稿\n4. 调整方案细节和宣传话术"
+                            }
+                        ]
+                    },
+                    analysis: {
+                        name: "数据分析",
+                        tools: [
+                            {
+                                id: 53,
+                                name: "业绩统计师",
+                                description: "销售数据汇总、趋势分析与预测",
+                                icon: "line-chart",
+                                color: "orange",
+                                usage: 289,
+                                favorite: true,
+                                instructions: "业绩统计师使用说明：\n1. 导入销售数据和相关指标\n2. 设置统计周期和分析维度\n3. 系统自动进行数据汇总和分析\n4. 生成趋势图表和预测结果"
+                            },
+                            {
+                                id: 54,
+                                name: "市场雷达",
+                                description: "竞品信息、行业动态快速提炼与推送",
+                                icon: "radar",
+                                color: "orange",
+                                usage: 212,
+                                favorite: false,
+                                instructions: "市场雷达使用说明：\n1. 设置关注的行业和竞品\n2. 系统自动收集相关信息\n3. 快速提炼关键信息和动态\n4. 定期推送市场洞察报告"
+                            }
+                        ]
+                    }
+                }
+            },
+            construction: {
+                name: "基建数字员工 —— 光明筑智助手",
+                subcategories: {
+                    project: {
+                        name: "项目管理",
+                        tools: [
+                            {
+                                id: 61,
+                                name: "进度管控师",
+                                description: "基建项目进度自动跟踪，生成甘特图/周报",
+                                icon: "calendar",
+                                color: "teal",
+                                usage: 278,
+                                favorite: true,
+                                instructions: "进度管控师使用说明：\n1. 导入项目计划和里程碑\n2. 定期更新项目实际进度\n3. 系统自动生成甘特图和进度报告\n4. 识别进度偏差并提供预警"
+                            }
+                        ]
+                    },
+                    documentation: {
+                        name: "资料管理",
+                        tools: [
+                            {
+                                id: 62,
+                                name: "资料归档官",
+                                description: "工程图纸、施工资料智能分类与检索",
+                                icon: "folder-open-o",
+                                color: "teal",
+                                usage: 234,
+                                favorite: false,
+                                instructions: "资料归档官使用说明：\n1. 上传工程图纸和施工资料\n2. 设置分类标准和标签规则\n3. 系统自动进行智能分类\n4. 生成检索索引和目录"
+                            }
+                        ]
+                    },
+                    cost_safety: {
+                        name: "成本安全",
+                        tools: [
+                            {
+                                id: 63,
+                                name: "成本精算师",
+                                description: "工程造价、预算执行自动核对",
+                                icon: "calculator",
+                                color: "teal",
+                                usage: 215,
+                                favorite: true,
+                                instructions: "成本精算师使用说明：\n1. 导入工程造价和预算数据\n2. 上传实际成本发生记录\n3. 系统自动进行成本核对和分析\n4. 生成成本控制报告"
+                            },
+                            {
+                                id: 64,
+                                name: "安全监督员",
+                                description: "施工日志、隐患排查、整改记录自动生成",
+                                icon: "shield",
+                                color: "teal",
+                                usage: 267,
+                                favorite: false,
+                                instructions: "安全监督员使用说明：\n1. 记录或导入施工安全信息\n2. 设置安全检查标准和频率\n3. 系统自动生成安全日志和排查记录\n4. 跟踪整改情况并发出提醒"
+                            }
+                        ]
+                    }
+                }
+            },
+            communication: {
+                name: "通信数字员工 —— 光明信通智维",
+                subcategories: {
+                    work_order: {
+                        name: "工单管理",
+                        tools: [
+                            {
+                                id: 71,
+                                name: "工单调度员",
+                                description: "通信故障工单自动分派与跟踪",
+                                icon: "ticket",
+                                color: "purple",
+                                usage: 312,
+                                favorite: true,
+                                instructions: "工单调度员使用说明：\n1. 接收通信故障工单\n2. 设置工单优先级和分派规则\n3. 系统自动进行工单分派\n4. 跟踪工单处理进度"
+                            }
+                        ]
+                    },
+                    network: {
+                        name: "网络监控",
+                        tools: [
+                            {
+                                id: 72,
+                                name: "网络监测官",
+                                description: "网络运行状态实时监控，异常报警",
+                                icon: "signal",
+                                color: "purple",
+                                usage: 345,
+                                favorite: true,
+                                instructions: "网络监测官使用说明：\n1. 配置网络监控参数和阈值\n2. 系统实时监控网络运行状态\n3. 自动识别异常情况并发出报警\n4. 生成网络运行报告"
+                            }
+                        ]
+                    },
+                    management: {
+                        name: "运维管理",
+                        tools: [
+                            {
+                                id: 73,
+                                name: "资料工程师",
+                                description: "通信设备台账、巡检记录自动生成",
+                                icon: "database",
+                                color: "purple",
+                                usage: 223,
+                                favorite: false,
+                                instructions: "资料工程师使用说明：\n1. 导入通信设备信息\n2. 设置巡检计划和内容\n3. 系统自动生成设备台账和巡检记录\n4. 跟踪设备维护历史"
+                            },
+                            {
+                                id: 74,
+                                name: "应急助手",
+                                description: "突发事件应急预案一键生成与推送",
+                                icon: "exclamation-triangle",
+                                color: "purple",
+                                usage: 189,
+                                favorite: true,
+                                instructions: "应急助手使用说明：\n1. 选择突发事件类型和级别\n2. 系统自动生成应急预案草稿\n3. 调整应急措施和流程\n4. 一键推送至相关人员"
+                            }
+                        ]
+                    }
+                }
+            },
+            dispatch: {
+                name: "调度数字员工 —— 光明调控参谋",
+                subcategories: {
+                    prediction: {
+                        name: "负荷预测",
+                        tools: [
+                            {
+                                id: 81,
+                                name: "负荷预测师",
+                                description: "自动预测电网负荷、绘制趋势曲线",
+                                icon: "line-chart",
+                                color: "indigo",
+                                usage: 324,
+                                favorite: true,
+                                instructions: "负荷预测师使用说明：\n1. 导入历史负荷数据和相关影响因素\n2. 设置预测时间范围和精度要求\n3. 系统自动进行负荷预测计算\n4. 生成预测结果和趋势曲线"
+                            }
+                        ]
+                    },
+                    records: {
+                        name: "调度记录",
+                        tools: [
+                            {
+                                id: 82,
+                                name: "调度日志官",
+                                description: "调度指令、运行日志自动记录与归档",
+                                icon: "file-text-o",
+                                color: "indigo",
+                                usage: 289,
+                                favorite: false,
+                                instructions: "调度日志官使用说明：\n1. 记录或导入调度指令和运行数据\n2. 系统自动生成规范化调度日志\n3. 对日志进行分类归档\n4. 支持快速检索和查询"
+                            }
+                        ]
+                    },
+                    emergency: {
+                        name: "应急调控",
+                        tools: [
+                            {
+                                id: 83,
+                                name: "应急指挥员",
+                                description: "故障应急预案生成，抢修方案智能推送",
+                                icon: "fire",
+                                color: "indigo",
+                                usage: 215,
+                                favorite: true,
+                                instructions: "应急指挥员使用说明：\n1. 输入故障类型和影响范围\n2. 系统自动匹配适用的应急预案\n3. 生成故障抢修方案\n4. 一键推送至相关人员"
+                            },
+                            {
+                                id: 84,
+                                name: "运行分析师",
+                                description: "电网运行数据汇总，异常波动预警",
+                                icon: "bar-chart",
+                                color: "indigo",
+                                usage: 301,
+                                favorite: false,
+                                instructions: "运行分析师使用说明：\n1. 导入电网运行实时数据\n2. 设置分析指标和预警阈值\n3. 系统自动进行数据汇总和分析\n4. 识别异常波动并发出预警"
+                            }
+                        ]
+                    }
+                }
+            }
+        };
+
+        // 大类切换功能
+        document.querySelectorAll('#main-category-list .category-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const category = item.getAttribute('data-category');
+                
+                // 更新大类激活状态
+                document.querySelectorAll('#main-category-list .category-item').forEach(i => {
+                    i.classList.remove('category-item-active');
+                    i.classList.add('hover:bg-gray-100');
+                });
+                item.classList.add('category-item-active');
+                item.classList.remove('hover:bg-gray-100');
+                
+                // 更新当前大类名称
+                document.getElementById('current-main-category').textContent = toolData[category].name;
+                
+                // 生成并更新小类列表
+                generateSubcategoryList(category);
+                
+                // 获取第一个小类并显示其工具
+                const firstSubcategory = Object.keys(toolData[category].subcategories)[0];
+                if (firstSubcategory) {
+                    showSubcategoryTools(category, firstSubcategory);
+                } else {
+                    // 如果没有小类，清空工具列表
+                    document.getElementById('tools-grid').innerHTML = `
+                        <div class="col-span-full text-center py-12">
+                            <i class="fa fa-folder-open-o text-4xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500">该分类下暂无小类和工具</p>
+                        </div>
+                    `;
+                    document.getElementById('current-subcategory').textContent = "暂无工具";
+                }
+            });
+        });
+        
+        // 生成小类列表
+        function generateSubcategoryList(category) {
+            const subcategoryList = document.getElementById('subcategory-list');
+            subcategoryList.innerHTML = '';
+            
+            const subcategories = toolData[category].subcategories;
+            
+            // 如果没有小类，显示提示
+            if (Object.keys(subcategories).length === 0) {
+                subcategoryList.innerHTML = `
+                    <div class="subcategory-item">
+                        暂无小类
+                    </div>
+                `;
+                return;
+            }
+            
+            // 生成小类项
+            Object.keys(subcategories).forEach(subcategoryKey => {
+                const subcategory = subcategories[subcategoryKey];
+                const subItem = document.createElement('div');
+                subItem.className = `subcategory-item hover:bg-gray-100 ${Object.keys(subcategories).indexOf(subcategoryKey) === 0 ? 'subcategory-item-active' : ''}`;
+                subItem.setAttribute('data-subcategory', subcategoryKey);
+                subItem.textContent = subcategory.name;
+                
+                // 添加小类点击事件
+                subItem.addEventListener('click', () => {
+                    showSubcategoryTools(category, subcategoryKey);
+                });
+                
+                subcategoryList.appendChild(subItem);
+            });
+        }
+        
+        // 显示小类对应的工具
+        function showSubcategoryTools(category, subcategory) {
+            // 更新小类激活状态
+            document.querySelectorAll('#subcategory-list .subcategory-item').forEach(item => {
+                item.classList.remove('subcategory-item-active');
+                item.classList.add('hover:bg-gray-100');
+            });
+            const activeSubItem = document.querySelector(`#subcategory-list .subcategory-item[data-subcategory="${subcategory}"]`);
+            if (activeSubItem) {
+                activeSubItem.classList.add('subcategory-item-active');
+                activeSubItem.classList.remove('hover:bg-gray-100');
+            }
+            
+            // 不再更新当前小类名称，因为元素已删除
+            const currentSubCategoryElement = document.getElementById('current-subcategory');
+            if (currentSubCategoryElement) {
+                currentSubCategoryElement.textContent = 
+                    `${toolData[category].subcategories[subcategory].name}工具`;
+            }
+            
+            // 生成工具卡片
+            const toolsGrid = document.getElementById('tools-grid');
+            toolsGrid.innerHTML = '';
+            
+            const tools = toolData[category].subcategories[subcategory].tools;
+            
+            // 如果没有工具，显示提示
+            if (tools.length === 0) {
+                toolsGrid.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fa fa-wrench text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500">该小类下暂无工具</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 生成工具卡片
+            tools.forEach(tool => {
+                const toolCard = document.createElement('div');
+                toolCard.className = 'bg-white rounded-xl shadow p-5 tool-card-hover cursor-move';
+                toolCard.draggable = true;
+                toolCard.setAttribute('data-category', category);
+                toolCard.setAttribute('data-subcategory', subcategory);
+                
+                toolCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-${tool.color}-100 flex items-center justify-center text-${tool.color}-600">
+                            <i class="fa fa-${tool.icon} text-xl"></i>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="favorite-button text-${tool.favorite ? 'yellow-400 hover:text-yellow-600' : 'gray-400 hover:text-gray-600'}">
+                                <i class="fa fa-${tool.favorite ? 'star' : 'star-o'}"></i>
+                            </button>
+                            <button class="text-gray-400 hover:text-gray-600">
+                                <i class="fa fa-ellipsis-v"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-2">${tool.name}</h3>
+                    <p class="text-gray-500 text-sm mb-4">${tool.description}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs bg-${tool.color}-50 text-${tool.color}-600 px-2 py-1 rounded-full">${toolData[category].subcategories[subcategory].name}</span>
+                        <button class="text-xs text-blue-500 hover:text-blue-700 instruction-button">使用说明</button>
+                    </div>
+                `;
+                
+                // 添加工具卡片点击事件
+                toolCard.addEventListener('click', (e) => {
+                    if (!e.target.closest('button')) {
+                        // 为文稿卫士工具特殊处理，跳转到专用页面
+                        if (tool.name === '文稿卫士') {
+                            window.location.href = 'document_guard.html';
+                        } else {
+                            alert(`打开工具: ${tool.name}`);
+                        }
+                    }
+                });
+                
+                // 添加收藏按钮点击事件
+                const favoriteButton = toolCard.querySelector('.favorite-button');
+                favoriteButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 阻止事件冒泡到工具卡片
+                    
+                    // 切换收藏状态
+                    tool.favorite = !tool.favorite;
+                    
+                    // 更新UI
+                    const favoriteIcon = favoriteButton.querySelector('i');
+                    if (tool.favorite) {
+                        favoriteButton.className = 'favorite-button text-yellow-400 hover:text-yellow-600';
+                        favoriteIcon.className = 'fa fa-star';
+                        alert(`已收藏工具: ${tool.name}`);
+                    } else {
+                        favoriteButton.className = 'favorite-button text-gray-400 hover:text-gray-600';
+                        favoriteIcon.className = 'fa fa-star-o';
+                        alert(`已取消收藏: ${tool.name}`);
+                    }
+                });
+                
+                // 添加使用说明按钮点击事件
+                const instructionButton = toolCard.querySelector('.instruction-button');
+                instructionButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 阻止事件冒泡到工具卡片
+                    
+                    // 显示使用说明
+                    alert(`${tool.name}使用说明\n\n${tool.instructions}`);
+                });
+                toolsGrid.appendChild(toolCard);
+            });
+            
+            // 重新初始化拖拽功能
+            initDragAndDrop();
+        }
+        
+        // 初始化拖拽排序功能
+        function initDragAndDrop() {
+            const toolsGrid = document.getElementById('tools-grid');
+            let draggedItem = null;
+            
+            document.querySelectorAll('#tools-grid > div').forEach(item => {
+                item.addEventListener('dragstart', () => {
+                    draggedItem = item;
+                    setTimeout(() => {
+                        item.classList.add('opacity-50', 'scale-95');
+                    }, 0);
+                });
+                
+                item.addEventListener('dragend', () => {
+                    draggedItem = null;
+                    item.classList.remove('opacity-50', 'scale-95');
+                    
+                    // 移除所有放置指示器
+                    document.querySelectorAll('.drag-over').forEach(el => {
+                        el.classList.remove('drag-over');
+                    });
+                });
+                
+                item.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+                
+                item.addEventListener('dragenter', (e) => {
+                    e.preventDefault();
+                    if (item !== draggedItem) {
+                        item.classList.add('drag-over', 'border-2', 'border-primary', 'bg-primary/5');
+                    }
+                });
+                
+                item.addEventListener('dragleave', () => {
+                    item.classList.remove('drag-over', 'border-2', 'border-primary', 'bg-primary/5');
+                });
+                
+                item.addEventListener('drop', () => {
+                    item.classList.remove('drag-over', 'border-2', 'border-primary', 'bg-primary/5');
+                    
+                    if (item !== draggedItem) {
+                        const items = Array.from(toolsGrid.children);
+                        const draggedIndex = items.indexOf(draggedItem);
+                        const dropIndex = items.indexOf(item);
+                        
+                        // 调整工具卡片位置
+                        if (draggedIndex < dropIndex) {
+                            toolsGrid.insertBefore(draggedItem, item.nextSibling);
+                        } else {
+                            toolsGrid.insertBefore(draggedItem, item);
+                        }
+                        
+                        // 保存新的排序顺序
+                        saveCustomOrder();
+                    }
+                });
+            });
+        }
+        
+        // 保存自定义排序顺序
+        function saveCustomOrder() {
+            const category = document.querySelector('#main-category-list .category-item-active').getAttribute('data-category');
+            const subcategory = document.querySelector('#subcategory-list .subcategory-item-active').getAttribute('data-subcategory');
+            
+            const toolOrder = Array.from(document.getElementById('tools-grid').children).map((item, index) => {
+                return {
+                    id: parseInt(item.querySelector('h3').textContent),
+                    position: index
+                };
+            });
+            
+            console.log(`保存${category} > ${subcategory}的自定义排序:`, toolOrder);
+            // 实际项目中，这里会将排序信息保存到后端
+        }
+        
+        // 排序模态框控制 - 添加元素存在性检查，避免访问已删除的按钮
+        const sortModal = document.getElementById('sort-modal');
+        const closeModal = document.getElementById('close-modal');
+        const cancelSort = document.getElementById('cancel-sort');
+        const saveSort = document.getElementById('save-sort');
+        
+        // 只有当关闭模态框按钮存在时才添加事件监听器
+        if (closeModal && cancelSort) {
+            [closeModal, cancelSort].forEach(btn => {
+                btn.addEventListener('click', () => {
+                    sortModal.classList.add('hidden');
+                });
+            });
+        }
+        
+        // 只有当保存排序按钮存在时才添加事件监听器
+        if (saveSort) {
+            saveSort.addEventListener('click', () => {
+                // 获取选中的排序方式
+                const selectedSort = document.querySelector('input[name="sort"]:checked')?.id;
+                if (selectedSort) {
+                    console.log('保存排序方式:', selectedSort);
+                    
+                    // 这里可以添加根据选择的排序方式重新排序工具的逻辑
+                }
+                sortModal.classList.add('hidden');
+            });
+        }
+        
+        // 移动端菜单控制
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        mobileMenuButton.addEventListener('click', () => {
+            const aside = document.querySelector('aside');
+            aside.classList.toggle('hidden');
+            aside.classList.toggle('fixed');
+            aside.classList.toggle('z-40');
+            aside.classList.toggle('h-full');
+        });
+        
+        // 初始化页面
+        window.addEventListener('DOMContentLoaded', () => {
+            // 默认显示第一个大类的第一个小类
+            const firstCategory = Object.keys(toolData)[0];
+            generateSubcategoryList(firstCategory);
+            
+            const firstSubcategory = Object.keys(toolData[firstCategory].subcategories)[0];
+            if (firstSubcategory) {
+                showSubcategoryTools(firstCategory, firstSubcategory);
+            }
+        });
+    </script>
+</body>
+</html>
+    
