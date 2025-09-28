@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文稿卫士测试</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">文稿卫士测试 - 错别字替换功能</h1>
+        
+        <!-- 文档内容区域 -->
+        <div id="document-content" class="bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
+            <p>系统将按装最新的软件版本，确保所有功能正常运行。</p>
+            <p>项目计划在下周完成，届时会举行庆功宴。</p>
+        </div>
+        
+        <!-- 错误检测结果区域 -->
+        <div id="error-results" class="mb-8">
+            <div class="bg-red-50 border-l-4 border-red-500 p-2 rounded-t-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <span class="text-red-500 mr-2"><i class="fa fa-times-circle"></i></span>
+                        <span class="font-medium text-gray-800 text-base">错别字（1个）</span>
+                    </div>
+                </div>
+            </div>
+            <div class="border border-t-0 border-gray-200 rounded-b-lg overflow-hidden">
+                <div class="bg-white p-2 border-b border-gray-200">
+                    <div class="flex flex-col md:flex-row items-center gap-2 p-1 border-b border-gray-100 overflow-x-auto">
+                        <div class="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full text-xs font-semibold shadow-sm">
+                            1
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex items-center flex-wrap gap-2 min-w-max">
+                                <p class="text-gray-800 bg-gray-50 p-1.5 rounded-md border border-gray-200 cursor-pointer hover:bg-gray-100 transition-all duration-200 whitespace-nowrap flex items-center h-8 shadow-sm">
+                                    <span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded">按装</span>
+                                </p>
+                                <div class="text-gray-500 font-medium">→</div>
+                                <p class="text-gray-800 bg-green-50 border-green-200 p-1.5 rounded-md border whitespace-nowrap flex items-center h-8 shadow-sm mr-3">
+                                    <span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded">安装</span>
+                                </p>
+                                <button class="px-3 py-1 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 hover:shadow-md transition-all duration-200 adopt-suggestion-btn whitespace-nowrap flex items-center justify-center h-8" data-original="按装" data-corrected="安装">
+                                    采纳
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 调试日志区域 -->
+        <div id="debug-log-area" style="
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-y: auto;
+            z-index: 1000;
+        "></div>
+    </div>
+    
+    <script>
+        // 为采纳建议按钮绑定事件的函数 - 支持回退功能
+        function setupAdoptButtons() {
+            // 重新绑定事件
+            document.querySelectorAll('.adopt-suggestion-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    // 获取原始文本和纠正文本
+                    const originalText = this.getAttribute('data-original');
+                    const correctedText = this.getAttribute('data-corrected');
+                    
+                    // 检查是否已采纳（是否处于回退状态）
+                    const isAdopted = this.getAttribute('data-adopted') === 'true';
+                    
+                    addDebugLog('尝试' + (isAdopted ? '回退建议' : '采纳建议') + ':', 
+                                isAdopted ? correctedText : originalText, '->', 
+                                isAdopted ? originalText : correctedText);
+                    
+                    if (originalText && correctedText) {
+                        try {
+                            // 获取文档内容区域
+                            const documentContent = document.getElementById('document-content');
+                            if (!documentContent) {
+                                console.error('未找到document-content元素');
+                                showNotification('操作时出错，请重试', 'error');
+                                return;
+                            }
+                            
+                            // 对HTML转义的文本进行解码
+                            const htmlDecode = (text) => {
+                                const tempElement = document.createElement('div');
+                                tempElement.innerHTML = text;
+                                return tempElement.textContent || tempElement.innerText || '';
+                            };
+                            
+                            // 根据当前状态确定要查找和替换的文本
+                            const searchText = isAdopted ? htmlDecode(correctedText) : htmlDecode(originalText);
+                            const replaceText = isAdopted ? htmlDecode(originalText) : htmlDecode(correctedText);
+                            
+                            addDebugLog('解码后的文本:', searchText, '->', replaceText);
+                            
+                            // 临时设置contentEditable为false以确保替换可靠
+                            const wasEditable = documentContent.contentEditable;
+                            documentContent.contentEditable = 'false';
+                            
+                            // 递归查找并替换文本节点中的内容
+                            let replaced = false;
+                            
+                            // 递归遍历DOM树的函数
+                            function findAndReplaceInTextNodes(node) {
+                                if (node.nodeType === Node.TEXT_NODE) {
+                                    // 处理文本节点
+                                    const text = node.textContent;
+                                    if (text.includes(searchText)) {
+                                        // 创建新的文本节点来替换
+                                        const newText = text.replace(searchText, replaceText);
+                                        const newTextNode = document.createTextNode(newText);
+                                        node.parentNode.replaceChild(newTextNode, node);
+                                        replaced = true;
+                                        addDebugLog('在文本节点中找到并替换了文本:', searchText, '->', replaceText);
+                                        return true;
+                                    }
+                                } else if (node.nodeType === Node.ELEMENT_NODE) {
+                                    // 跳过脚本和样式元素
+                                    if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE') {
+                                        return false;
+                                    }
+                                    
+                                    // 递归处理所有子节点
+                                    for (let i = 0; i < node.childNodes.length && !replaced; i++) {
+                                        if (findAndReplaceInTextNodes(node.childNodes[i])) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            }
+                            
+                            // 开始递归查找并替换
+                            findAndReplaceInTextNodes(documentContent);
+                            
+                            // 恢复contentEditable状态
+                            documentContent.contentEditable = wasEditable;
+                            
+                            if (replaced) {
+                                // 切换采纳状态
+                                const newAdoptedState = !isAdopted;
+                                this.setAttribute('data-adopted', newAdoptedState);
+                                
+                                // 强制刷新DOM并触发input事件
+                                setTimeout(() => {
+                                    const event = new Event('input', { bubbles: true });
+                                    documentContent.dispatchEvent(event);
+                                }, 50);
+                                
+                                // 更新按钮文本和样式
+                                this.textContent = newAdoptedState ? '回退' : '采纳';
+                                this.classList.toggle('text-green-700', !newAdoptedState);
+                                this.classList.toggle('bg-green-50', !newAdoptedState);
+                                this.classList.toggle('text-amber-700', newAdoptedState);
+                                this.classList.toggle('bg-amber-50', newAdoptedState);
+                                this.classList.toggle('border-green-200', !newAdoptedState);
+                                this.classList.toggle('border-amber-200', newAdoptedState);
+                                
+                                // 显示成功提示
+                                showNotification(newAdoptedState ? '已回退到原始文本' : '已采纳建议并更新文档内容', 'success');
+                                
+                                // 更新错误卡片样式
+                                const errorCard = this.closest('.bg-white');
+                                if (errorCard) {
+                                    if (newAdoptedState) {
+                                        errorCard.classList.add('bg-gray-50', 'opacity-70');
+                                    } else {
+                                        errorCard.classList.remove('bg-gray-50', 'opacity-70');
+                                    }
+                                }
+                                
+                                // 不要禁用按钮，以便支持回退操作
+                            } else {
+                                addDebugLog('未能找到匹配的文本进行替换');
+                                showNotification('未找到匹配的文本进行' + (isAdopted ? '回退' : '替换'), 'warning');
+                            }
+                        } catch (err) {
+                            console.error('采纳建议失败:', err);
+                            addDebugLog('采纳建议失败:', err.message);
+                            showNotification('采纳建议时出错，请重试', 'error');
+                        }
+                    }
+                });
+            });
+        }
+        
+        // 显示通知消息
+        function showNotification(message, type = 'info') {
+            // 检查是否已存在通知元素
+            let notificationContainer = document.getElementById('notification-container');
+            if (!notificationContainer) {
+                notificationContainer = document.createElement('div');
+                notificationContainer.id = 'notification-container';
+                notificationContainer.className = 'fixed top-4 right-4 z-50 flex flex-col space-y-2';
+                document.body.appendChild(notificationContainer);
+            }
+            
+            // 创建通知元素
+            const notification = document.createElement('div');
+            
+            // 设置样式和内容
+            let bgColor, icon;
+            if (type === 'success') {
+                bgColor = 'bg-green-500';
+                icon = 'fa-check-circle';
+            } else if (type === 'error') {
+                bgColor = 'bg-red-500';
+                icon = 'fa-times-circle';
+            } else {
+                bgColor = 'bg-blue-500';
+                icon = 'fa-info-circle';
+            }
+            
+            notification.className = `${bgColor} text-white px-4 py-2 rounded-lg shadow-lg flex items-center transform transition-all duration-300 ease-in-out translate-x-full opacity-0`;
+            notification.innerHTML = `
+                <i class="fa ${icon} mr-2"></i>
+                <span>${message}</span>
+            `;
+            
+            // 添加到容器
+            notificationContainer.appendChild(notification);
+            
+            // 显示通知
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full', 'opacity-0');
+            }, 10);
+            
+            // 3秒后隐藏通知
+            setTimeout(() => {
+                notification.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // 添加调试日志
+        function addDebugLog(message) {
+            const logArea = document.getElementById('debug-log-area');
+            if (logArea) {
+                const logEntry = document.createElement('div');
+                logEntry.innerText = `[${new Date().toLocaleTimeString()}] ${message}`;
+                logArea.appendChild(logEntry);
+                logArea.scrollTop = logArea.scrollHeight;
+            }
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupAdoptButtons();
+            addDebugLog('文稿卫士测试页面初始化完成');
+            addDebugLog('点击"采纳"按钮测试错别字替换功能');
+        });
+    </script>
+</body>
+</html>

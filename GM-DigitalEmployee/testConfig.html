@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工具配置测试页面</title>
+    <script src="loadToolConfig.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #1D4ED8;
+        }
+        .config-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f8fafc;
+            border-radius: 5px;
+        }
+        pre {
+            background-color: #f1f5f9;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            background-color: #1D4ED8;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #1E40AF;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .status.success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .status.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <h1>工具配置测试页面</h1>
+    <p>此页面用于测试工具配置文件是否正确加载和解析。</p>
+    
+    <button onclick="testToolConfig()">测试工具配置</button>
+    <button onclick="viewOriginalConfig()">查看原始配置文件</button>
+    
+    <div id="status" class="status"></div>
+    
+    <div id="config-output"></div>
+    
+    <h2>Docker启动说明</h2>
+    <p>如果Docker服务没有运行，请按照以下步骤操作：</p>
+    <ol>
+        <li>确保Docker Desktop已安装并处于运行状态</li>
+        <li>打开命令行工具（PowerShell或CMD）</li>
+        <li>导航到项目根目录：<pre>cd Z:\03_my_program\众创\Mass_Innovation</pre></li>
+        <li>运行以下命令构建并启动Docker容器：<pre>docker-compose up -d --build</pre></li>
+        <li>使用以下命令查看容器状态：<pre>docker-compose ps</pre></li>
+    </ol>
+    
+    <script>
+        // 测试工具配置加载
+        function testToolConfig() {
+            const statusDiv = document.getElementById('status');
+            const configOutput = document.getElementById('config-output');
+            
+            // 检查配置是否已加载
+            if (window.toolConfig && Object.keys(window.toolConfig).length > 0) {
+                statusDiv.innerHTML = '配置加载成功！';
+                statusDiv.className = 'status success';
+                
+                // 显示所有工具配置
+                configOutput.innerHTML = '<h2>工具配置详情：</h2>';
+                Object.entries(window.toolConfig).forEach(([toolName, config]) => {
+                    const configItem = document.createElement('div');
+                    configItem.className = 'config-item';
+                    configItem.innerHTML = `
+                        <h3>${toolName}</h3>
+                        <pre>${JSON.stringify(config, null, 2)}</pre>
+                    `;
+                    configOutput.appendChild(configItem);
+                });
+            } else {
+                statusDiv.innerHTML = '配置尚未加载完成，请稍后重试。';
+                statusDiv.className = 'status error';
+                configOutput.innerHTML = '';
+                
+                // 尝试手动重新加载配置
+                loadToolConfig().then(() => {
+                    setTimeout(testToolConfig, 1000);
+                });
+            }
+        }
+        
+        // 查看原始配置文件内容
+        function viewOriginalConfig() {
+            const configOutput = document.getElementById('config-output');
+            const statusDiv = document.getElementById('status');
+            
+            fetch('toolConfig.txt')
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
+                    }
+                    throw new Error('无法加载配置文件');
+                })
+                .then(text => {
+                    statusDiv.innerHTML = '原始配置文件内容：';
+                    statusDiv.className = 'status success';
+                    configOutput.innerHTML = `<pre>${text}</pre>`;
+                })
+                .catch(error => {
+                    statusDiv.innerHTML = `加载配置文件失败: ${error.message}`;
+                    statusDiv.className = 'status error';
+                    configOutput.innerHTML = '';
+                });
+        }
+        
+        // 页面加载完成后自动测试
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(testToolConfig, 2000);
+        });
+    </script>
+</body>
+</html>

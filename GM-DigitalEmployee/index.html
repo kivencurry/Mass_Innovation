@@ -51,6 +51,9 @@
             }
         }
     </style>
+    
+    <!-- 引入工具服务配置文件加载器 -->
+    <script src="loadToolConfig.js"></script>
 </head>
 <body class="font-inter bg-gray-50 text-dark h-screen flex overflow-hidden">
     <!-- 左侧栏 - 大类导航 -->
@@ -1176,11 +1179,24 @@
                 // 添加工具卡片点击事件
                 toolCard.addEventListener('click', (e) => {
                     if (!e.target.closest('button')) {
-                        // 为文稿卫士工具特殊处理，跳转到专用页面
-                        if (tool.name === '文稿卫士') {
-                            window.location.href = 'document_guard.html';
+                        // 基于工具名称从配置文件获取对应的服务配置
+                        const config = window.toolConfig && window.toolConfig[tool.name];
+                        
+                        if (config) {
+                            // 检查是否有配置的前端页面
+                            if (config.frontendUrl) {
+                                // 跳转到对应的前端页面
+                                window.location.href = config.frontendUrl;
+                            } else if (config.serviceUrl) {
+                                // 直接打开后端服务
+                                alert(`即将打开后端服务: ${config.serviceUrl}`);
+                                // 在实际实现中，这里可以打开新窗口或通过iframe加载服务
+                                // window.open(config.serviceUrl, '_blank');
+                            }
                         } else {
+                            // 如果配置文件中没有找到该工具的配置，使用默认行为
                             alert(`打开工具: ${tool.name}`);
+                            console.warn(`工具 ${tool.name} 未在配置文件中找到对应的服务配置`);
                         }
                     }
                 });

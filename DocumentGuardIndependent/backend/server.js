@@ -13,6 +13,10 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
+// 配置静态文件服务，提供前端页面
+const frontendPath = path.join(__dirname, '../frontend');
+app.use(express.static(frontendPath));
+
 // 配置文件上传存储
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -83,90 +87,44 @@ async function parsePDFFile(filePath) {
   }
 }
 
-// 检测文档中的错误
+// 检测文档中的错误 - 通过调用外部Python脚本来实现
 function detectDocumentErrors(text) {
-    const errors = [];
+    // 注意：这个函数现在是一个异步函数的占位符
+    // 实际的调用逻辑在fileUploadHandler中实现
+    // 这里保留函数声明是为了兼容现有代码结构
+    return [];
+}
+
+// 通过Python脚本检测文档中的错误
+function detectDocumentErrorsWithPython(text) {
+    const { execSync } = require('child_process');
+    const path = require('path');
     
-    // 简单的错别字检测（实际应用中可能需要更复杂的词库）
-    const typos = [
-        { original: '按装', corrected: '安装', type: '错别字' },
-        { original: '既使', corrected: '即使', type: '错别字' },
-        { original: '穿流不息', corrected: '川流不息', type: '错别字' }
-    ];
-    
-    // 简单的语法错误检测
-    const grammarErrors = [
-        { original: '香蕉，和橙子', corrected: '香蕉和橙子', type: '语法错误' },
-        { original: '不仅学习好，但是', corrected: '不仅学习好，而且', type: '语法错误' }
-    ];
-    
-    // 简单的优化建议
-    const suggestions = [
-        { original: '进行了详细的分析，我们', corrected: '通过对项目进行详细分析，我们', type: '优化建议' },
-        { original: '具有一定的竞争力', corrected: '具备较强竞争力', type: '优化建议' }
-    ];
-    
-    // 检测错别字
-    typos.forEach(typo => {
-        const regex = new RegExp(typo.original, 'g');
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            // 提取错误上下文
-            const contextStart = Math.max(0, match.index - 10);
-            const contextEnd = Math.min(text.length, match.index + typo.original.length + 10);
-            const context = text.substring(contextStart, contextEnd);
-            
-            errors.push({
-                type: typo.type,
-                original: typo.original,
-                corrected: typo.corrected,
-                context: context,
-                position: match.index
-            });
-        }
-    });
-    
-    // 检测语法错误
-    grammarErrors.forEach(error => {
-        const regex = new RegExp(error.original, 'g');
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            // 提取错误上下文
-            const contextStart = Math.max(0, match.index - 10);
-            const contextEnd = Math.min(text.length, match.index + match[0].length + 10);
-            const context = text.substring(contextStart, contextEnd);
-            
-            errors.push({
-                type: error.type,
-                original: error.original,
-                corrected: error.corrected,
-                context: context,
-                position: match.index
-            });
-        }
-    });
-    
-    // 检测优化建议
-    suggestions.forEach(suggestion => {
-        const regex = new RegExp(suggestion.original, 'g');
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            // 提取错误上下文
-            const contextStart = Math.max(0, match.index - 10);
-            const contextEnd = Math.min(text.length, match.index + match[0].length + 10);
-            const context = text.substring(contextStart, contextEnd);
-            
-            errors.push({
-                type: suggestion.type,
-                original: suggestion.original,
-                corrected: suggestion.corrected,
-                context: context,
-                position: match.index
-            });
-        }
-    });
-    
-    return errors;
+    try {
+        // 构建Python脚本路径
+        const scriptPath = path.join(__dirname, 'typo_detector.py');
+        
+        // 执行Python脚本并传递文本内容
+        // 使用base64编码来避免命令行参数中的特殊字符问题
+        const encodedText = Buffer.from(text, 'utf8').toString('base64');
+        
+        // 在Windows环境下，确保正确处理中文编码
+        // 使用cmd.exe并设置编码环境变量
+        const command = `cmd.exe /c "set PYTHONIOENCODING=utf-8 && python \"${scriptPath}\" --text \"${encodedText}\""`;
+        
+        // 同步执行命令，指定编码为utf8
+        const output = execSync(command, { encoding: 'utf8' });
+        
+        // 清理输出中的BOM标记和换行符
+        const cleanOutput = output.replace(/^\uFEFF/, '').trim();
+        
+        // 解析Python脚本的输出
+        return JSON.parse(cleanOutput);
+    } catch (error) {
+        console.error('调用Python脚本检测错误失败:', error);
+        // 如果Python脚本调用失败，返回空数组
+        return [];
+    }
 }
 
 // 文件上传和解析API
@@ -196,8 +154,8 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     // 删除上传的文件，我们只需要内容
     fs.unlinkSync(filePath);
     
-    // 检测文档中的错误
-    const errors = detectDocumentErrors(contentData.textContent);
+    // 检测文档中的错误 - 使用Python脚本
+    const errors = detectDocumentErrorsWithPython(contentData.textContent);
 
     // 返回解析后的内容和错误检测结果
     res.json({

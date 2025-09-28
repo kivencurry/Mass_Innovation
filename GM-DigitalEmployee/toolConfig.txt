@@ -1,0 +1,15 @@
+# 工具服务配置文件
+# 格式：工具名称,服务URL,前端URL,请求方法,允许的文件类型,描述
+# 注意：不要修改格式，确保每一行的格式正确
+
+# 文稿卫士
+文稿卫士,http://localhost:3000/api,http://localhost:3000/document_guard.html,POST,.txt,.docx,.doc,.pdf,文档内容检查和错误检测工具
+
+# 公文规范官
+公文规范官,http://localhost:3000/api/official-document,official_document.html,POST,.txt,.docx,.doc,公文格式规范化工具
+
+# 事务小秘书
+事务小秘书,http://localhost:3000/api/affairs,affairs_secretary.html,GET,,日常事务管理和提醒工具
+
+# 双语翻译官
+双语翻译官,http://localhost:3000/api/translation,bilingual_translator.html,POST,.txt,.docx,.doc,.pdf,中英文互译工具

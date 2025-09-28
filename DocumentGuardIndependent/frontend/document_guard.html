@@ -7,6 +7,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="loadToolConfig.js"></script>
+        <script src="document_guard_fix.js"></script>
+        <script src="document_guard_enhanced.js"></script>
+        <script src="document_guard_highlight_fix.js"></script>
+        <script src="document_guard_scroll_fix.js"></script>
     <!-- Tailwind 配置 -->
     <script>
         tailwind.config = {
@@ -51,31 +56,27 @@
     </style>
 </head>
 <body class="font-inter bg-gray-50 min-h-screen flex flex-col">
-    <!-- 顶部导航栏 -->
-    <header class="h-16 bg-white border-b border-gray-200 flex items-center px-6 sticky top-0 z-30 shadow-sm">
+    <!-- 顶部导航栏 - 紧凑版 -->
+    <header class="h-12 bg-white border-b border-gray-200 flex items-center px-4 sticky top-0 z-30 shadow-sm">
         <div class="flex items-center space-x-2">
-            <a href="index.html" class="text-gray-600 hover:text-primary">
-                <i class="fa fa-arrow-left text-xl"></i>
+            <a href="http://localhost:8080/" class="text-gray-600 hover:text-primary">
+                <i class="fa fa-arrow-left text-lg"></i>
             </a>
-            <h1 class="text-xl font-semibold text-gray-800">文稿卫士</h1>
+            <h1 class="text-lg font-semibold text-gray-800">文稿卫士</h1>
         </div>
-        <div class="flex-1 mx-6 flex items-center justify-center">
-            <div class="text-sm text-gray-500">
+        <div class="flex-1 mx-4 flex items-center justify-center">
+            <div class="text-xs text-gray-500 hidden md:block">
                 <span>首页</span> &gt; <span>文稿智匠</span> &gt; <span class="text-primary">文稿卫士</span>
             </div>
         </div>
-        <div class="flex items-center space-x-6">
+        <div class="flex items-center space-x-4">
             <button class="text-gray-500 hover:text-primary relative">
-                <i class="fa fa-bell text-xl"></i>
+                <i class="fa fa-bell text-lg"></i>
                 <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
-            <div class="flex items-center space-x-3">
-                <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                     <i class="fa fa-shield-alt"></i>
-                </div>
-                <div class="hidden md:block">
-                    <p class="text-sm font-medium text-gray-800">张三</p>
-                    <p class="text-xs text-gray-500">个人账户</p>
                 </div>
             </div>
         </div>
@@ -108,7 +109,7 @@
                 </div>
                 
                 <!-- 整个区域作为文本编辑、展示框 -->
-                <div id="document-content" class="flex-1 p-6 overflow-y-auto w-full bg-gray-50 focus:outline-none transition-all shadow-inner" contenteditable="true" style="min-height: calc(100vh - 200px);">
+                <div id="document-content" class="flex-1 p-4 overflow-y-auto w-full bg-white focus:outline-none transition-all" contenteditable="true" style="min-height: calc(100vh - 150px);">
                     <p class="text-gray-400">在此处输入或粘贴文本内容，或点击上方上传按钮导入文件...</p>
                 </div>
             </div>
@@ -133,7 +134,7 @@
                 </div>
                 
                 <!-- 错误列表 -->
-                <div class="flex-1 overflow-y-auto p-4" style="min-height: calc(100vh - 200px);">
+                <div class="flex-1 overflow-y-auto p-3" style="min-height: calc(100vh - 150px);">
                     <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
                         <i class="fa fa-search mr-2 text-primary"></i>错误详情 (<span id="error-count">0</span>)
                     </h3>
@@ -156,7 +157,7 @@
                     </div>
                     
                     <!-- 错误列表项 -->
-                    <div class="space-y-3">
+                        <div class="space-y-2">
                         <!-- 错误检测结果将动态生成在这里 -->
                         <div id="error-results" class="space-y-4">
                             <div class="text-center text-gray-500 py-8">
@@ -452,91 +453,172 @@
                     document.querySelectorAll('.adopt-suggestion-btn').forEach(btn => {
                         btn.addEventListener('click', function(e) {
                             e.stopPropagation();
-                            
+                             
                             // 获取原始文本和纠正文本
-                            const originalText = this.getAttribute('data-original');
-                            const correctedText = this.getAttribute('data-corrected');
+                            // 注意：需要进行HTML解码，因为在创建按钮时使用了escapeHtml
+                            const encodedOriginalText = this.getAttribute('data-original');
+                            const encodedCorrectedText = this.getAttribute('data-corrected');
                             
-                            console.log('尝试采纳建议:', originalText, '->', correctedText);
+                            // 添加HTML解码函数
+                            function htmlDecode(str) {
+                                if (!str) return '';
+                                const doc = new DOMParser().parseFromString(str, 'text/html');
+                                return doc.documentElement.textContent;
+                            }
                             
-                            if (originalText && correctedText) {
+                            // 解码HTML实体
+                            const originalText = htmlDecode(encodedOriginalText);
+                            const correctedText = htmlDecode(encodedCorrectedText);
+                            
+                            // 检查当前是否已采纳状态
+                            const isAdopted = this.getAttribute('data-adopted') === 'true';
+                             
+                            // 切换文本 - 如果已采纳，则回退到原始文本
+                            const sourceText = isAdopted ? correctedText : originalText;
+                            const targetText = isAdopted ? originalText : correctedText;
+                              
+                            console.log('--- 文本替换调试信息 ---');
+                            console.log('原始编码文本:', encodedOriginalText);
+                            console.log('纠正编码文本:', encodedCorrectedText);
+                            console.log('解码后原始文本:', originalText);
+                            console.log('解码后纠正文本:', correctedText);
+                            console.log('源文本:', sourceText);
+                            console.log('目标文本:', targetText);
+                            console.log('是否已采纳:', isAdopted);
+                            addDebugLog('--- 文本替换调试信息 ---');
+                            addDebugLog('原始编码文本:', encodedOriginalText);
+                            addDebugLog('纠正编码文本:', encodedCorrectedText);
+                            addDebugLog('解码后原始文本:', originalText);
+                            addDebugLog('解码后纠正文本:', correctedText);
+                            addDebugLog('源文本:', sourceText);
+                            addDebugLog('目标文本:', targetText);
+                            addDebugLog('是否已采纳:', isAdopted);
+                            
+                            if (sourceText && targetText) {
                                 try {
                                     // 获取文档内容区域
                                     const documentContent = document.getElementById('document-content');
                                     if (!documentContent) {
                                         console.error('未找到document-content元素');
-                                        showNotification('采纳建议时出错，请重试', 'error');
+                                        showNotification('操作时出错，请重试', 'error');
                                         return;
                                     }
                                     
-                                    // 对HTML转义的文本进行解码
-                                    const htmlDecode = (text) => {
-                                        const tempElement = document.createElement('div');
-                                        tempElement.innerHTML = text;
-                                        return tempElement.textContent || tempElement.innerText || '';
-                                    };
+                                    // 临时设置contentEditable为false以确保替换可靠
+                                    const wasEditable = documentContent.contentEditable;
+                                    documentContent.contentEditable = 'false';
                                     
-                                    // 解码文本
-                                    const decodedOriginal = htmlDecode(originalText);
-                                    const decodedCorrected = htmlDecode(correctedText);
+                                    // 递归查找并替换文本节点中的内容
+                                    let replaced = false;
                                     
-                                    console.log('解码后的文本:', decodedOriginal, '->', decodedCorrected);
-                                    
-                                    // 获取文档的文本内容
-                                    const documentText = documentContent.textContent;
-                                    
-                                    // 检查是否包含原始文本
-                                    if (documentText.includes(decodedOriginal)) {
-                                        // 临时设置contentEditable为false以确保替换可靠
-                                        const wasEditable = documentContent.contentEditable;
-                                        documentContent.contentEditable = 'false';
-                                        
-                                        // 直接替换文本内容（这会保留HTML结构）
-                                        const paragraphs = documentContent.querySelectorAll('p');
-                                        let replaced = false;
-                                        
-                                        // 遍历所有段落，查找并替换包含原始文本的段落
-                                        paragraphs.forEach(paragraph => {
-                                            if (paragraph.textContent.includes(decodedOriginal)) {
-                                                const newText = paragraph.textContent.replace(decodedOriginal, decodedCorrected);
-                                                paragraph.textContent = newText;
+                                    // 递归处理所有子节点
+                                    function findAndReplaceInTextNodes(node) {
+                                        if (node.nodeType === Node.TEXT_NODE) {
+                                            // 处理文本节点
+                                            const text = node.textContent;
+                                            // 使用indexOf进行查找，更加灵活
+                                            const index = text.indexOf(sourceText);
+                                            if (index !== -1) {
+                                                // 创建新的文本节点来替换
+                                                const newText = text.replace(sourceText, targetText);
+                                                const newTextNode = document.createTextNode(newText);
+                                                node.parentNode.replaceChild(newTextNode, node);
                                                 replaced = true;
-                                                console.log('在段落中找到并替换了文本');
+                                                console.log('在文本节点中找到并替换了文本:', sourceText, '->', targetText);
+                                                addDebugLog('在文本节点中找到并替换了文本:', sourceText, '->', targetText);
+                                                return true;
                                             }
-                                        });
-                                        
-                                        // 如果在段落中没找到，就直接替换整个文档的文本内容
-                                        if (!replaced) {
-                                            documentContent.textContent = documentText.replace(decodedOriginal, decodedCorrected);
-                                            console.log('替换了整个文档的文本内容');
+                                        } else if (node.nodeType === Node.ELEMENT_NODE) {
+                                            // 跳过脚本和样式元素
+                                            if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE') {
+                                                return false;
+                                            }
+                                            
+                                            // 递归处理所有子节点
+                                            for (let i = 0; i < node.childNodes.length && !replaced; i++) {
+                                                if (findAndReplaceInTextNodes(node.childNodes[i])) {
+                                                    return true;
+                                                }
+                                            }
                                         }
+                                        return false;
+                                    }
+                                    
+                                    // 开始递归查找并替换
+                                    replaced = findAndReplaceInTextNodes(documentContent);
+                                    console.log('递归查找替换结果:', replaced);
+                                    addDebugLog('递归查找替换结果:', replaced);
+                                    
+                                    // 如果第一次查找失败，尝试使用更宽松的匹配方式
+                                    if (!replaced) {
+                                        console.log('尝试使用更宽松的匹配方式');
+                                        addDebugLog('尝试使用更宽松的匹配方式');
                                         
-                                        // 恢复contentEditable状态
-                                        documentContent.contentEditable = wasEditable;
+                                        // 显示当前文档HTML内容片段以帮助调试
+                                        const docContentPreview = documentContent.textContent.substring(0, 200) + '...';
+                                        console.log('文档内容预览:', docContentPreview);
+                                        addDebugLog('文档内容预览:', docContentPreview);
                                         
+                                        // 尝试在整个文档HTML中进行替换（作为备选方案）
+                                        const docHTML = documentContent.innerHTML;
+                                        console.log('文档HTML包含源文本:', docHTML.includes(sourceText));
+                                        addDebugLog('文档HTML包含源文本:', docHTML.includes(sourceText));
+                                        
+                                        if (docHTML.includes(sourceText)) {
+                                            const newHTML = docHTML.replace(sourceText, targetText);
+                                            documentContent.innerHTML = newHTML;
+                                            replaced = true;
+                                            console.log('通过HTML替换找到了并替换了文本:', sourceText, '->', targetText);
+                                            addDebugLog('通过HTML替换找到了并替换了文本:', sourceText, '->', targetText);
+                                        }
+                                    }
+                                    
+                                    // 恢复contentEditable状态
+                                    documentContent.contentEditable = wasEditable;
+                                    
+                                    if (replaced) {
                                         // 强制刷新DOM并触发input事件
                                         setTimeout(() => {
                                             const event = new Event('input', { bubbles: true });
                                             documentContent.dispatchEvent(event);
                                         }, 50);
                                         
-                                        // 显示成功提示
-                                        showNotification('已采纳建议并更新文档内容', 'success');
+                                        // 切换采纳状态
+                                        const newAdoptedState = !isAdopted;
+                                        this.setAttribute('data-adopted', newAdoptedState);
                                         
-                                        // 更新错误卡片样式并禁用按钮
+                                        // 更新按钮文本和样式
+                                        if (newAdoptedState) {
+                                            this.textContent = '回退';
+                                            this.classList.remove('bg-green-50', 'text-green-700', 'border-green-200', 'hover:bg-green-100');
+                                            this.classList.add('bg-amber-50', 'text-amber-700', 'border-amber-200', 'hover:bg-amber-100');
+                                        } else {
+                                            this.textContent = '采纳';
+                                            this.classList.remove('bg-amber-50', 'text-amber-700', 'border-amber-200', 'hover:bg-amber-100');
+                                            this.classList.add('bg-green-50', 'text-green-700', 'border-green-200', 'hover:bg-green-100');
+                                        }
+                                        
+                                        // 显示成功提示
+                                        showNotification(isAdopted ? '已回退到原始文本' : '已采纳建议并更新文档内容', 'success');
+                                        
+                                        // 更新错误卡片样式
                                         const errorCard = this.closest('.bg-white');
                                         if (errorCard) {
-                                            errorCard.classList.add('bg-gray-50', 'opacity-70');
+                                            if (newAdoptedState) {
+                                                errorCard.classList.add('bg-gray-50', 'opacity-70');
+                                            } else {
+                                                errorCard.classList.remove('bg-gray-50', 'opacity-70');
+                                            }
                                         }
-                                        this.disabled = true;
-                                        this.classList.add('opacity-50', 'cursor-not-allowed');
                                     } else {
-                                        console.warn('未能找到匹配的文本进行替换');
+                                        console.warn('未能找到匹配的文本进行替换:', sourceText);
+                                        addDebugLog('⚠️ 未能找到匹配的文本进行替换:', sourceText);
                                         showNotification('未找到匹配的文本进行替换', 'warning');
                                     }
                                 } catch (err) {
-                                    console.error('采纳建议失败:', err);
-                                    showNotification('采纳建议时出错，请重试', 'error');
+                                    console.error('操作失败:', err);
+                                    addDebugLog('❌ 操作失败:', err.message);
+                                    showNotification('操作时出错，请重试', 'error');
                                 }
                             }
                         });
@@ -915,8 +997,14 @@
                         <p>正在检测文档错误...</p>
                     </div>`;
                     
+                    // 获取后端API地址
+                    let apiUrl = 'http://localhost:3000/api/upload'; // 默认地址
+                    if (window.toolConfig && window.toolConfig['文稿卫士'] && window.toolConfig['文稿卫士'].serviceUrl) {
+                        apiUrl = window.toolConfig['文稿卫士'].serviceUrl + '/upload';
+                    }
+                    
                     // 调用后端API上传并解析文件
-                    const response = await fetch('http://localhost:3000/api/upload', {
+                    const response = await fetch(apiUrl, {
                         method: 'POST',
                         body: formData
                     });
@@ -1120,7 +1208,7 @@
                             // 为该类型的每个错误生成卡片
                             typeErrors.forEach((error, index) => {                        
                                 const errorCard = document.createElement('div');
-                                errorCard.className = 'bg-white p-2 border-b border-gray-200 last:border-b-0 hover:shadow-sm transition-shadow';
+                                errorCard.className = 'bg-white p-1 border-b border-gray-200 last:border-b-0 hover:shadow-sm transition-shadow';
                                 
                                 // 生成错误内容卡片 - 只显示错误的词语或句子
                                 // 先确保原始和纠正文本存在且类型正确
@@ -1132,42 +1220,38 @@
                                 const safeCorrected = escapeHtml(correctedText);
                                 const safeContext = escapeHtml(error.context || '');
                                 
-                                // 生成错误内容卡片HTML
+                                // 生成错误内容卡片HTML - 更紧凑版
                                 const errorCardHtml = `
-                                    <div class="flex flex-col md:flex-row items-center gap-2 p-1 border-b border-gray-100 last:border-b-0 overflow-x-auto hover:bg-gray-50 transition-colors">
+                                    <div class="flex flex-col md:flex-row items-center gap-0.5 p-0.5 border-b border-gray-100 last:border-b-0 overflow-x-auto hover:bg-gray-50 transition-colors max-w-full">
                                         <!-- 序号区域 -->
-                                        <div class="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full text-xs font-semibold shadow-sm">
+                                        <div class="w-6 h-6 flex-shrink-0 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full text-xs font-semibold">
                                             ${index + 1}
                                         </div>
                                         
                                         <!-- 主要内容区域 - 包含按钮和文本在同一行 -->
                                         <div class="flex-grow">
                                             <!-- 文本和按钮在同一行 -->
-                                            <div class="flex items-center flex-wrap gap-2 min-w-max">
+                                            <div class="flex items-center flex-wrap gap-0.5 min-w-max">
                                                 <!-- 错误内容 -->
-                                                <p class="text-gray-800 bg-gray-50 p-1.5 rounded-md border border-gray-200 error-content-card cursor-pointer hover:bg-gray-100 transition-all duration-200 whitespace-nowrap flex items-center h-8 shadow-sm">
-                                                    <span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded">${safeOriginal}</span>
+                                                <p class="text-gray-800 bg-gray-50 p-1 rounded border border-gray-200 error-content-card cursor-pointer hover:bg-gray-100 transition-all duration-200 whitespace-nowrap flex items-center h-7">
+                                                    <span class="bg-red-100 text-red-700 px-1 py-0.5 rounded text-xs">${safeOriginal}</span>
                                                 </p>
                                                 
                                                 <!-- 修改箭头 -->
-                                                <div class="text-gray-500 font-medium">
+                                                <div class="text-gray-500 font-medium text-xs">
                                                     →
                                                 </div>
                                                 
                                                 <!-- 建议修改 -->
-                                                <p class="text-gray-800 ${error.type === '优化建议' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'} p-1.5 rounded-md border whitespace-nowrap flex items-center h-8 shadow-sm mr-3">
-                                                    <span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded">${safeCorrected}</span>
+                                                <p class="text-gray-800 ${error.type === '优化建议' ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'} p-1 rounded border whitespace-nowrap flex items-center h-7 mr-2">
+                                                    <span class="bg-green-100 text-green-700 px-1 py-0.5 rounded text-xs">${safeCorrected}</span>
                                                 </p>
                                                 
                                                 <!-- 采纳按钮 -->
-                                                <button class="px-3 py-1 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 hover:shadow-md transition-all duration-200 adopt-suggestion-btn whitespace-nowrap flex items-center justify-center h-8" data-original="${safeOriginal}" data-corrected="${safeCorrected}">
+                                                <button class="px-2 py-0.5 text-xs text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 hover:shadow-md transition-all duration-200 adopt-suggestion-btn whitespace-nowrap flex items-center justify-center h-7" data-original="${safeOriginal}" data-corrected="${safeCorrected}">
                                                     采纳
                                                 </button>
-                                                
-                                                <!-- 忽略按钮 -->
-                                                <button class="px-3 py-1 text-sm text-gray-700 border border-gray-300 bg-white rounded-md hover:bg-gray-50 hover:shadow-md transition-all duration-200 whitespace-nowrap flex items-center justify-center h-8">
-                                                    忽略
-                                                </button>
+                                                 
                                             </div>
                                         </div>
                                     </div>`;
@@ -1191,19 +1275,19 @@
                         setupErrorCardInteractions();
                     }
                 
-                // 应用样式，使显示更接近WPS文档编辑器
+                // 应用样式，使显示更接近WPS文档编辑器 - 紧凑版
                 documentContent.style.background = '#ffffff';
-                documentContent.style.padding = '24px';
-                documentContent.style.borderRadius = '8px';
+                documentContent.style.padding = '16px';
+                documentContent.style.borderRadius = '4px';
                 documentContent.style.boxShadow = 'inset 0 0 0 1px #e0e0e0';
                 documentContent.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-                documentContent.style.lineHeight = '1.8';
+                documentContent.style.lineHeight = '1.6';
                 documentContent.style.color = '#333';
                 documentContent.style.letterSpacing = '0.01em';
                 documentContent.style.fontSize = '14px';
                 
                 // 自动调整高度以适应内容
-                documentContent.style.minHeight = 'calc(100vh - 200px)';
+                documentContent.style.minHeight = 'calc(100vh - 150px)';
                 
                 // 添加一些全局样式以确保表格和其他元素正确显示
                 const style = document.createElement('style');
