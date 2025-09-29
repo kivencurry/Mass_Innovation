@@ -173,7 +173,7 @@
 
     <!-- 页脚 -->
     <footer class="bg-white border-t border-gray-200 py-4 px-6 text-center text-sm text-gray-500">
-        <p>© 2025 光明数字员工系统 - 文稿卫士工具</p>
+        <p>©光明数字员工系统 - 文稿卫士工具</p>
     </footer>
 
     <!-- JavaScript -->
@@ -746,32 +746,6 @@
                             display: none;
                         `;
                         
-                        const toggleBtn = document.createElement('button');
-                        toggleBtn.innerText = '显示调试日志';
-                        toggleBtn.style.cssText = `
-                            position: fixed;
-                            bottom: 20px;
-                            right: 120px;
-                            background: #4CAF50;
-                            color: white;
-                            border: none;
-                            padding: 8px 16px;
-                            border-radius: 4px;
-                            cursor: pointer;
-                            z-index: 1001;
-                        `;
-                        
-                        toggleBtn.addEventListener('click', function() {
-                            if (logArea.style.display === 'none') {
-                                logArea.style.display = 'block';
-                                toggleBtn.innerText = '隐藏调试日志';
-                            } else {
-                                logArea.style.display = 'none';
-                                toggleBtn.innerText = '显示调试日志';
-                            }
-                        });
-                        
-                        document.body.appendChild(toggleBtn);
                         document.body.appendChild(logArea);
                     }
                     
